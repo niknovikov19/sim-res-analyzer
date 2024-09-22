@@ -5,6 +5,7 @@ import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+from numpy import pi
 from scipy import signal as sig
 import xarray as xr
 
@@ -14,7 +15,7 @@ import common as cmn
 from sim_res_parser import SimResultParser, RateParams
 from data_keeper import DataKeeper
 from data_proc import DataProcessor, PSDParams
-from plot_utils import plot_xarray_2d
+from plot_utils import plot_xarray_2d, polar_to_rgb
 
 
 dirpath_storage_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\data')
@@ -46,37 +47,57 @@ os.makedirs(dirpath_figs, exist_ok=True)
 # Initialize data keeper
 dk = DataKeeper(str(dirpath_storage), fname_metadata)
 
+data_type = 'CSD'
+
 X = dk.get_data('CSDpop', [('csd', {})])
 tt = X.time.values
+fs = 1 / (tt[1] - tt[0])
 
-sig_descs = [{'pop': 'IT3', 'yrange': (0, 250)},
-             {'pop': 'IT3', 'yrange': (750, 1000)}]
+#sig_descs = [{'pop': 'IT3', 'yrange': (0, 250)},
+#             {'pop': 'IT3', 'yrange': (750, 1000)}]
+#sig_descs = [{'pop': 'IT3', 'yrange': (750, 1000)},
+#             {'pop': 'ITP4', 'yrange': (750, 1000)}]
+#sig_descs = [{'pop': 'IT3', 'yrange': (750, 1000)},
+#             {'pop': 'IT5A', 'yrange': (1100, 1300)}]
+sig_descs = [{'pop': 'ITP4', 'yrange': (750, 1000)},
+             {'pop': 'IT5A', 'yrange': (1100, 1300)}]
 
-fband = (7, 14)
+#fband = (7, 14)
 #fband = (70, 80)
+
+nperseg = 1024
 
 x = {}
 for n, desc in enumerate(sig_descs):
     x[n] = {}
     x[n]['orig'] = X.sel(pop=desc['pop'], y=slice(*desc['yrange'])).mean(dim='y')
-    x[n]['filt'] = cmn.filter_signal(x[n]['orig'], tt, fband)
-    x[n]['hilb'] = sig.hilbert(x[n]['filt'])
 
-dphi = np.angle(x[1]['hilb'] / x[0]['hilb'])
-h, b = np.histogram(dphi, bins=30, density=True)
-h = np.concatenate((h, h))
-b = np.concatenate((b[:-1], 2 * np.pi + b[:-1]))
+ff, c = sig.coherence(x[0]['orig'], x[1]['orig'], fs=2000,
+                nperseg=nperseg, noverlap=int(nperseg * 0.5))
+ff, w = sig.csd(x[0]['orig'], x[1]['orig'], fs=2000,
+                nperseg=nperseg, noverlap=int(nperseg * 0.5))
+
+fmax = 150
+mask = ff < fmax
+ff_ = ff[mask]
+
+title_str = (f'{data_type}  '
+     f'{sig_descs[0]["pop"]} (y={sig_descs[0]["yrange"][0]}-{sig_descs[0]["yrange"][1]}) - '
+     f'{sig_descs[1]["pop"]} (y={sig_descs[1]["yrange"][0]}-{sig_descs[1]["yrange"][1]})')
 
 plt.figure()
-plt.plot(b, h)
+plt.subplot(2, 1, 1)
+c_ = np.abs(c[mask])
+plt.plot(ff_, c_)
+plt.ylabel('Coherence')
+plt.title(title_str)
+plt.subplot(2, 1, 2)
+for k in (-1, 0, 1):
+    d = 2 * pi * k
+    col = 1 - c_
+    plt.scatter(ff_, np.angle(w[mask]) + d, c=col, cmap='gray')
+    plt.plot([0, fmax], [d, d], 'k--')
+plt.xlabel('Frequency')
+plt.ylabel('Phase diff.')
 
-# =============================================================================
-# plt.figure()
-# #plt.subplot(2, 1, 1)
-# plt.plot(tt, x[0])
-# #plt.subplot(2, 1, 2)
-# plt.plot(tt, x[1])
-# plt.xlabel('Time')
-# =============================================================================
-    
 X.close()

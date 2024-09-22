@@ -37,7 +37,7 @@ def _sim_res_to_xr_pop_rates_dyn(sim_res, dt, time_limits=(0, None)):
     # If upper time limit not specified - use the whole simulation
     time_limits = list(time_limits)
     if time_limits[1] is None:
-        time_limits[1] = utils.get_sim_duration(sim_res)
+        time_limits[1] = utils.get_sim_duration(sim_res) / 1000
     # Allocate the output
     tt, _ = utils.calc_rate_dynamics([], time_limits, dt)
     coords = {'pop': pop_names, 'time': tt}

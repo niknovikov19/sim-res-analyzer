@@ -18,8 +18,8 @@ from plot_utils import plot_xarray_2d
 dirpath_storage_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\data')
 dirpath_figs_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\results')
 
-fpath_sim_res = (r'D:\WORK\Salvador\repo\A1_model_old\data\exp_3s_LFPpop\exp_3s_LFPpop_data.pkl')
-exp_name = 'exp_3s_LFPpop_1'
+fpath_sim_res = (r'D:\WORK\Salvador\repo\A1_model_old\data\exp_10s_LFPpop\exp_10s_LFPpop_data.pkl')
+exp_name = 'exp_10s_LFPpop_1'
 
 #fpath_sim_res = r'D:\WORK\Salvador\repo\A1_model_old\data\A1_paper\v34_batch56_10s_data.pkl'
 #exp_name = 'exp_10s_1'
@@ -28,21 +28,24 @@ fname_metadata = 'metadata.json'
 
 need_parse = 0
 need_recalc = 0
+need_save = 1
 
 rate_par = RateParams(dt=0.002)
 
 psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+    #inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+    inp_limits=(1.5, 8), win_len=1.5, win_overlap=0.75, fmax=150)
 
 fbands = {'low': (5, 25), 'high': (40, 150)}
 
-# none | log | self | total
-norm_type = 'log'
+# none | log | self | total | totalbin
+norm_type = 'total'
 
 
 # Folders for the data and figures
+t1, t2 = psd_par.inp_limits[0], psd_par.inp_limits[1]
 dirpath_storage = dirpath_storage_root / exp_name
-dirpath_figs = dirpath_figs_root / exp_name
+dirpath_figs = dirpath_figs_root / exp_name / f'tlim={t1}-{t2}'
 os.makedirs(dirpath_storage, exist_ok=True)
 os.makedirs(dirpath_figs, exist_ok=True)
 
@@ -116,7 +119,7 @@ with dk.get_data(*data_desc['LFP']['pop']['sig']) as X:
 nx = 4
 ny = 2
 
-def plot_fband_psd(W, W0):
+def plot_fband_psd(W, W0, norm_type):
     for fband in fbands.values():
         w = W.sel(freq=slice(fband[0], fband[1])).mean(dim='freq')
         w0 = W0.sel(freq=slice(fband[0], fband[1])).mean(dim='freq')
@@ -126,6 +129,8 @@ def plot_fband_psd(W, W0):
             w /= w.max(dim='y')
         elif norm_type == 'log':
             w = np.log(w)
+        elif norm_type == 'totalbin':
+            w /= w0
         plt.plot(w.values, w.y.values, label=f'{fband[0]}-{fband[1]}')
     plt.ylim(w.y[0], w.y[-1])
     plt.gca().invert_yaxis()
@@ -140,7 +145,7 @@ for data_type in ['LFP', 'BIP', 'CSD']:
     # Total LFP
     W0 = dk.get_data(*data_desc[data_type]['all']['psd'])
     plt.subplot(ny, nx, nx * ny)
-    plot_fband_psd(W0, W0)
+    plot_fband_psd(W0, W0, norm_type='self')
     #plt.xlim((0, 1))
     plt.title(f'PSD: {data_type}, total')
     
@@ -149,12 +154,13 @@ for data_type in ['LFP', 'BIP', 'CSD']:
         for n, pop_name in enumerate(pop_names):
             plt.subplot(ny, nx, n + 1)
             W_ = W.sel(pop=pop_name)
-            plot_fband_psd(W_, W0)
+            plot_fband_psd(W_, W0, norm_type=norm_type)
             #plt.xlim((0, 0.4))
             plt.title(f'PSD: {data_type}, {pop_name}')
     W0.close()
             
     # Save the result
-    fpath_fig = gen_fig_fpath('LFP_CSD_pop_PSD_fband_y', data_type)
-    plt.savefig(fpath_fig, dpi=300)
+    if need_save:
+        fpath_fig = gen_fig_fpath('LFP_CSD_pop_PSD_fband_y', data_type)
+        plt.savefig(fpath_fig, dpi=300)
 

@@ -107,6 +107,6 @@ def calc_rate_dynamics(spike_times, time_range, dt, pop_sz=1,
     rvec = np.bincount(bin_idx, minlength=Nbins)
     rvec = rvec / (dt * pop_sz * num_epochs)
     # Time samples
-    tvec = np.arange(Nbins, dtype=np.float64) * dt
+    tvec = np.arange(Nbins, dtype=np.float64) * dt + t1
     # Return the result
     return tvec, rvec

@@ -17,8 +17,8 @@ from plot_utils import plot_xarray_2d
 dirpath_storage_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\data')
 dirpath_figs_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\results')
 
-fpath_sim_res = (r'D:\WORK\Salvador\repo\A1_model_old\data\exp_3s_LFPpop\exp_3s_LFPpop_data.pkl')
-exp_name = 'exp_3s_LFPpop_1'
+fpath_sim_res = (r'D:\WORK\Salvador\repo\A1_model_old\data\exp_10s_LFPpop\exp_10s_LFPpop_data.pkl')
+exp_name = 'exp_10s_LFPpop_1'
 
 #fpath_sim_res = r'D:\WORK\Salvador\repo\A1_model_old\data\A1_paper\v34_batch56_10s_data.pkl'
 #exp_name = 'exp_10s_1'
@@ -31,15 +31,17 @@ need_recalc = 0
 rate_par = RateParams(dt=0.002)
 
 psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+    #inp_limits=(1.5, 8), win_len=1.5, win_overlap=0.75, fmax=150)
+    inp_limits=(0.5, 10), win_len=1.5, win_overlap=0.75, fmax=150)
 
 # Normalize each freq. bin by max. over depth
-freq_norm = 1
+freq_norm = 0
 
 
 # Folders for the data and figures
+t1, t2 = psd_par.inp_limits[0], psd_par.inp_limits[1]
 dirpath_storage = dirpath_storage_root / exp_name
-dirpath_figs = dirpath_figs_root / exp_name
+dirpath_figs = dirpath_figs_root / exp_name / f'tlim={t1}-{t2}'
 os.makedirs(dirpath_storage, exist_ok=True)
 os.makedirs(dirpath_figs, exist_ok=True)
 

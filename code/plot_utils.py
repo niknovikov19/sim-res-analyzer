@@ -1,4 +1,7 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import hsv_to_rgb
+import matplotlib.colors as mcolors
+import matplotlib.colorbar as mcolorbar
 import numpy as np
 import xarray as xr
 
@@ -40,3 +43,27 @@ def plot_xarray_2d_irreg(X: xr.DataArray, need_log=False, cmap=None):
     plt.ylabel(coord_y)
     plt.colorbar(m)
     plt.title(X.name)
+    
+def polar_to_rgb(X, s_mult=2, v=0.9):
+    X_hsv = np.full((*X.shape, 3), np.nan)
+    phi = np.angle(X)
+    phi = phi % (2 * np.pi)
+    X_hsv[:, :, 0] = phi / (2 * np.pi)           # hue = angle
+    X_hsv[:, :, 1] = np.abs(X) * s_mult          # saturation = absolute value
+    X_hsv[:, :, 2] = v                           # value = const
+    X_hsv = np.minimum(X_hsv, 1)
+    return hsv_to_rgb(X_hsv)
+
+def hsv_colorbar(shift=0.5):
+    def _shifted_cmap(cmap, shift_, name='shifted_cmap'):
+        N = cmap.N
+        colors_array = cmap(np.linspace(0, 1, N))
+        colors_array = np.roll(colors_array, int(N * shift_), axis=0)
+        return mcolors.LinearSegmentedColormap.from_list(name, colors_array)
+    shifted_hsv = _shifted_cmap(plt.get_cmap('hsv'), shift_=shift)
+    cbar_ax = plt.gca().inset_axes([1.05, 0.1, 0.03, 0.8])
+    norm = mcolors.Normalize(vmin=-np.pi, vmax=np.pi)
+    hsv_cbar = mcolorbar.ColorbarBase(cbar_ax, cmap=shifted_hsv, norm=norm, orientation='vertical')
+    hsv_cbar.set_ticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
+    hsv_cbar.set_ticklabels(['-π', '-π/2', '0', 'π/2', 'π'])
+
