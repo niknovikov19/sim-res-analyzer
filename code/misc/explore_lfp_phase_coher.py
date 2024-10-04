@@ -29,9 +29,6 @@ fname_metadata = 'metadata.json'
 
 rate_par = RateParams(dt=0.002)
 
-psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
-
 fbands = {'low': (5, 25), 'high': (40, 150)}
 
 # none | log | self | total
@@ -50,6 +47,9 @@ dk = DataKeeper(str(dirpath_storage), fname_metadata)
 data_type = 'CSD'
 
 X = dk.get_data('CSDpop', [('csd', {})])
+
+X = X.sel(time=slice(1.5, 8))
+
 tt = X.time.values
 fs = 1 / (tt[1] - tt[0])
 
@@ -59,8 +59,10 @@ fs = 1 / (tt[1] - tt[0])
 #             {'pop': 'ITP4', 'yrange': (750, 1000)}]
 #sig_descs = [{'pop': 'IT3', 'yrange': (750, 1000)},
 #             {'pop': 'IT5A', 'yrange': (1100, 1300)}]
-sig_descs = [{'pop': 'ITP4', 'yrange': (750, 1000)},
-             {'pop': 'IT5A', 'yrange': (1100, 1300)}]
+#sig_descs = [{'pop': 'ITP4', 'yrange': (750, 1000)},
+#             {'pop': 'IT5A', 'yrange': (1100, 1300)}]
+sig_descs = [{'pop': 'IT2', 'yrange': (0, 250)},
+             {'pop': 'IT6', 'yrange': (1400, 1650)}]
 
 #fband = (7, 14)
 #fband = (70, 80)

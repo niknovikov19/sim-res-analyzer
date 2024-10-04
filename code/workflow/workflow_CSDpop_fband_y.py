@@ -39,7 +39,7 @@ psd_par = PSDParams(
 fbands = {'low': (5, 25), 'high': (40, 150)}
 
 # none | log | self | total | totalbin
-norm_type = 'total'
+norm_type = 'self'
 
 
 # Folders for the data and figures
@@ -131,14 +131,15 @@ def plot_fband_psd(W, W0, norm_type):
             w = np.log(w)
         elif norm_type == 'totalbin':
             w /= w0
-        plt.plot(w.values, w.y.values, label=f'{fband[0]}-{fband[1]}')
+        plt.plot(w.values, w.y.values, label=f'{fband[0]}-{fband[1]}',
+                 linewidth=3)
     plt.ylim(w.y[0], w.y[-1])
     plt.gca().invert_yaxis()
-    plt.ylabel('y')
-    plt.legend()
+    #plt.ylabel('y')
+    #plt.legend()
 
 for data_type in ['LFP', 'BIP', 'CSD']:    
-    plt.figure(111)
+    plt.figure(113)
     plt.clf()
     print(f'Plot {data_type}...')
     
@@ -147,7 +148,7 @@ for data_type in ['LFP', 'BIP', 'CSD']:
     plt.subplot(ny, nx, nx * ny)
     plot_fband_psd(W0, W0, norm_type='self')
     #plt.xlim((0, 1))
-    plt.title(f'PSD: {data_type}, total')
+    #plt.title(f'PSD: {data_type}, total')
     
     # LFP by population
     with dk.get_data(*data_desc[data_type]['pop']['psd']) as W:

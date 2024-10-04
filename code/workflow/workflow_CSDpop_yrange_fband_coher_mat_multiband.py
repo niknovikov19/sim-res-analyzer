@@ -3,6 +3,7 @@ from pathlib import Path
 from pprint import pprint
 import sys
 
+import cmasher
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import pi
@@ -16,6 +17,7 @@ from sim_res_parser import SimResultParser, RateParams
 from data_keeper import DataKeeper
 from data_proc import DataProcessor, PSDParams
 from plot_utils import plot_xarray_2d, polar_to_rgb, hsv_colorbar
+from plot_utils import plot_circle_matrix
 
 
 dirpath_storage_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\data')
@@ -27,15 +29,13 @@ exp_name = 'exp_10s_LFPpop_1'
 fname_metadata = 'metadata.json'
 
 
-rate_par = RateParams(dt=0.002)
-
-psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+t_limits=(1.5, 8)
 
 
 # Folders for the data and figures
+t1, t2 = t_limits[0], t_limits[1]
 dirpath_storage = dirpath_storage_root / exp_name
-dirpath_figs = dirpath_figs_root / exp_name
+dirpath_figs = dirpath_figs_root / exp_name / f'tlim={t1}-{t2}'
 os.makedirs(dirpath_storage, exist_ok=True)
 os.makedirs(dirpath_figs, exist_ok=True)
 
@@ -45,6 +45,7 @@ dk = DataKeeper(str(dirpath_storage), fname_metadata)
 data_type = 'CSD'
 
 X = dk.get_data('CSDpop', [('csd', {})])
+X = X.sel(time=slice(*t_limits))
 tt = X.time.values
 fs = 1 / (tt[1] - tt[0])
 
@@ -66,6 +67,8 @@ fmax = 150
 df = 10
 f0_vals = np.arange(0, 125, 1)
 
+need_sqrt = 1
+
 # =============================================================================
 # title_str = (f'{data_type}  '
 #      f'{desc1["pop"]} (y={desc1["yrange"][0]}-{desc1["yrange"][1]}) - '
@@ -75,6 +78,8 @@ f0_vals = np.arange(0, 125, 1)
 
 # Output folder
 dirname_out = f'{data_type}_coher_mat_nperseg={nperseg}_df={df}'
+if need_sqrt:
+    dirname_out += '_sqrt'
 dirpath_out = dirpath_figs / dirname_out
 os.makedirs(dirpath_out, exist_ok=True)
 
@@ -108,15 +113,25 @@ for n, f0 in enumerate(f0_vals):
             P[n1, n2] = c_ * w_ / np.abs(w_)
     
     # Plot
-    plt.figure(111)
+    plt.figure(113)
     plt.clf()
-    Prgb = polar_to_rgb(P, s_mult=1.5)  
-    plt.imshow(Prgb, aspect='equal', origin='lower')
-    labels = [f'{desc["pop"]} {desc["yrange"][0]}-{desc["yrange"][1]}'
-              for desc in pop_yrange_descs]
-    plt.xticks(ticks=np.arange(nsig), labels=labels, rotation=45, ha='right')
-    plt.yticks(ticks=np.arange(nsig), labels=labels, rotation=0)
-    hsv_colorbar()
+# =============================================================================
+#     Prgb = polar_to_rgb(P, s_mult=1.5)  
+#     plt.imshow(Prgb, aspect='equal', origin='lower')
+#     labels = [f'{desc["pop"]} {desc["yrange"][0]}-{desc["yrange"][1]}'
+#               for desc in pop_yrange_descs]
+#     plt.xticks(ticks=np.arange(nsig), labels=labels, rotation=45, ha='right')
+#     plt.yticks(ticks=np.arange(nsig), labels=labels, rotation=0)
+#     hsv_colorbar()
+# =============================================================================
+    Pabs = np.abs(P)
+    if need_sqrt:
+        Pabs = np.sqrt(Pabs)
+    plot_circle_matrix(np.angle(P), Pabs, clim=(-pi, pi),
+                       cmap=cmasher.infinity, fig_num=113)
+    plt.gca().set_aspect('equal', 'box')
+    plt.xticks([])
+    plt.yticks([])
     title_str = f'{data_type}, {fband[0]}-{fband[1]} Hz'
     plt.title(title_str)
     

@@ -27,15 +27,13 @@ exp_name = 'exp_10s_LFPpop_1'
 fname_metadata = 'metadata.json'
 
 
-rate_par = RateParams(dt=0.002)
-
-psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+t_limits=(1.5, 8)
 
 
 # Folders for the data and figures
+t1, t2 = t_limits[0], t_limits[1]
 dirpath_storage = dirpath_storage_root / exp_name
-dirpath_figs = dirpath_figs_root / exp_name
+dirpath_figs = dirpath_figs_root / exp_name / f'tlim={t1}-{t2}'
 os.makedirs(dirpath_storage, exist_ok=True)
 os.makedirs(dirpath_figs, exist_ok=True)
 
@@ -45,6 +43,7 @@ dk = DataKeeper(str(dirpath_storage), fname_metadata)
 data_type = 'CSD'
 
 X = dk.get_data('CSDpop', [('csd', {})])
+X = X.sel(time=slice(*t_limits))
 tt = X.time.values
 fs = 1 / (tt[1] - tt[0])
 
@@ -63,7 +62,8 @@ pop_yrange_descs = [
 desc_labels = [f'{desc["pop"]}_{desc["yrange"][0]}-{desc["yrange"][1]}'
           for desc in pop_yrange_descs]
 
-desc_num_base = 0
+#desc_num_base = 0
+desc_num_base = 8
 
 nperseg = 1024
 fmax = 150
@@ -71,8 +71,12 @@ fmax = 150
 df = 10
 f0_vals = np.arange(0, 125, 1)
 
+need_sqrt = 1
+
 # Output folder
 dirname_out = f'{data_type}_coher_polar_nperseg={nperseg}_df={df}'
+if need_sqrt:
+    dirname_out += '_sqrt'
 dirpath_out = dirpath_figs / dirname_out / f'base={desc_labels[desc_num_base]}'
 os.makedirs(dirpath_out, exist_ok=True)
 
@@ -103,25 +107,34 @@ for n, f0 in enumerate(f0_vals):
         n2 = desc_num_base
         c_ = C[(n1, n2)][mask].mean()
         w_ = W[(n1, n2)][mask].mean()
-        P[n1] = c_ * w_ / np.abs(w_)
+        if need_sqrt:
+            P[n1] = np.sqrt(c_) * w_ / np.abs(w_)
+        else:
+            P[n1] = c_ * w_ / np.abs(w_)
     
     # Plot
-    plt.figure(111)
+    plt.figure(113)
     plt.clf()
     for m in range(nsig):
-        plt.plot([0, np.real(P[m])], [0, np.imag(P[m])], '.-', label=desc_labels[m])
-    plt.xlabel('Real')
-    plt.ylabel('Imag')
-    plt.legend()
+        plt.plot([0, np.real(P[m])], [0, np.imag(P[m])], '.-', label=desc_labels[m],
+             linewidth=3, markersize=13)
+    #plt.xlabel('Real')
+    #plt.ylabel('Imag')
+    plt.xticks([])
+    plt.yticks([])
+    #plt.legend()
     l = 1
     plt.xlim(-l, l)
     plt.ylim(-l, l)
     plt.gca().set_aspect('equal', 'box')
     title_str = f'{data_type}, {fband[0]}-{fband[1]} Hz'
     plt.title(title_str)
+    plt.show()
+    plt.draw()
     
     # Save
     fname_out = f'fband={fband[0]}-{fband[1]}.png'
     plt.savefig(dirpath_out / fname_out)
+    #plt.close()
 
 X.close()

@@ -27,15 +27,13 @@ exp_name = 'exp_10s_LFPpop_1'
 fname_metadata = 'metadata.json'
 
 
-rate_par = RateParams(dt=0.002)
-
-psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+t_limits=(1.5, 8)
 
 
 # Folders for the data and figures
+t1, t2 = t_limits[0], t_limits[1]
 dirpath_storage = dirpath_storage_root / exp_name
-dirpath_figs = dirpath_figs_root / exp_name
+dirpath_figs = dirpath_figs_root / exp_name / f'tlim={t1}-{t2}'
 os.makedirs(dirpath_storage, exist_ok=True)
 os.makedirs(dirpath_figs, exist_ok=True)
 
@@ -45,6 +43,7 @@ dk = DataKeeper(str(dirpath_storage), fname_metadata)
 data_type = 'CSD'
 
 X = dk.get_data('CSDpop', [('csd', {})])
+X = X.sel(time=slice(*t_limits))
 tt = X.time.values
 fs = 1 / (tt[1] - tt[0])
 
@@ -88,28 +87,36 @@ for n1, desc1 in enumerate(pop_yrange_descs):
         ff_ = ff[mask]
 
         # Plot
-        plt.figure(111)
+        #plt.figure(113)
+        plt.figure(113, figsize=(12, 7))
         plt.clf()
         plt.subplot(2, 1, 1)
         c_ = np.abs(c[mask])
-        plt.plot(ff_, c_)
-        plt.ylabel('Coherence')
+        plt.plot(ff_, c_, linewidth=3)
+        #plt.ylabel('Coherence')
         plt.ylim(0, 1)
         plt.title(title_str)
+        plt.xticks([])
         plt.subplot(2, 1, 2)
-        for k in (-1, 0, 1):
+        #for k in (-1, 0, 1):
+        for k in (0, 1):
             d = 2 * pi * k
             col = 1 - c_
-            plt.scatter(ff_, np.angle(w[mask]) + d, c=col, cmap='gray')
+            plt.scatter(ff_, np.angle(w[mask]) + d, c=col, cmap='gray',
+                        s=60)
             plt.plot([0, fmax], [d, d], 'k--')
-        plt.xlabel('Frequency')
-        plt.ylabel('Phase diff.')
+        plt.ylim(-pi, 3 * pi)
+        #plt.xlabel('Frequency')
+        #plt.ylabel('Phase diff.')
+        plt.subplots_adjust(hspace=0.1) 
         
         # Save the figure
         dirname_out = f'{data_type}_coher_yrange_nperseg={nperseg}'
         dirpath_out = dirpath_figs / dirname_out
         os.makedirs(dirpath_out, exist_ok=True)
         fpath_out = dirpath_out / f'{title_str}.png'
-        plt.savefig(fpath_out)        
+        plt.savefig(fpath_out)
+        
+        #break
 
 X.close()

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.collections import PatchCollection
 from matplotlib.colors import hsv_to_rgb
 import matplotlib.colors as mcolors
 import matplotlib.colorbar as mcolorbar
@@ -67,3 +68,38 @@ def hsv_colorbar(shift=0.5):
     hsv_cbar.set_ticks([-np.pi, -np.pi/2, 0, np.pi/2, np.pi])
     hsv_cbar.set_ticklabels(['-π', '-π/2', '0', 'π/2', 'π'])
 
+
+def plot_circle_matrix(C, R, clim=None, rmax=None, cmap='twilight', fig_num=None):
+
+    if not np.all(C.shape == R.shape):
+        raise ValueError('C and R shhould have the same size')
+    ny, nx = C.shape
+    x, y = np.meshgrid(np.arange(nx), np.arange(ny))
+    
+# =============================================================================
+#     if fig_num is None:
+#         fig, ax = plt.subplots()
+#     else:
+#         fig, ax = plt.subplots(num=fig_num)
+#         plt.clf()
+# =============================================================================
+
+    fig = plt.gcf()
+    ax = plt.gca()
+    
+    if rmax is None:
+        rmax = R.max()
+    R = R / rmax / 2
+    
+    circles = [plt.Circle((j,i), radius=r) for r, j, i in zip(R.flat, x.flat, y.flat)]
+    p = PatchCollection(circles, array=C.flatten(), cmap=cmap)
+    if clim is not None:
+        p.set_clim(clim)
+    ax.add_collection(p)
+    
+    ax.set_xticks(np.arange(nx + 1) - 0.5, minor=True)
+    ax.set_yticks(np.arange(ny + 1) - 0.5, minor=True)
+    ax.grid(which='minor')
+    
+    fig.colorbar(p)
+    plt.show()

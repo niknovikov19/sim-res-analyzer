@@ -27,15 +27,13 @@ exp_name = 'exp_10s_LFPpop_1'
 fname_metadata = 'metadata.json'
 
 
-rate_par = RateParams(dt=0.002)
-
-psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+t_limits=(1.5, 8)
 
 
 # Folders for the data and figures
+t1, t2 = t_limits[0], t_limits[1]
 dirpath_storage = dirpath_storage_root / exp_name
-dirpath_figs = dirpath_figs_root / exp_name
+dirpath_figs = dirpath_figs_root / exp_name / f'tlim={t1}-{t2}'
 os.makedirs(dirpath_storage, exist_ok=True)
 os.makedirs(dirpath_figs, exist_ok=True)
 
@@ -45,6 +43,7 @@ dk = DataKeeper(str(dirpath_storage), fname_metadata)
 data_type = 'CSD'
 
 X = dk.get_data('CSDpop', [('csd', {})])
+X = X.sel(time=slice(*t_limits))
 tt = X.time.values
 fs = 1 / (tt[1] - tt[0])
 
@@ -62,7 +61,7 @@ pop_yrange_descs = [
 
 nperseg = 1024
 
-fband = (4, 10)
+fband = (4, 14)
 #fband = (50, 100)
 
 # =============================================================================
@@ -93,6 +92,9 @@ for n1, desc1 in enumerate(pop_yrange_descs):
         C[n1, n2] = c_ * w_ / np.abs(w_)
 
 n_base = 0
+#n_base = 8
+
+need_sqrt = 1
 
 title_str = f'{data_type}, {fband[0]}-{fband[1]} Hz'
 labels = [f'{desc["pop"]} {desc["yrange"][0]}-{desc["yrange"][1]}'
@@ -100,11 +102,16 @@ labels = [f'{desc["pop"]} {desc["yrange"][0]}-{desc["yrange"][1]}'
 plt.figure()
 for n in range(nsig):
     c = C[n, n_base]
-    plt.plot([0, np.real(c)], [0, np.imag(c)], '.-', label=labels[n])
-plt.xlabel('Real')
-plt.ylabel('Imag')
-plt.legend()
-l = 1
+    if need_sqrt:
+        c = c / np.abs(c) * np.sqrt(np.abs(c))
+    plt.plot([0, np.real(c)], [0, np.imag(c)], '.-', label=labels[n],
+             linewidth=3, markersize=13)
+#plt.xlabel('Real')
+#plt.ylabel('Imag')
+plt.xticks([])
+plt.yticks([])
+#plt.legend()
+l = 0.9
 plt.xlim(-l, l)
 plt.ylim(-l, l)
 plt.gca().set_aspect('equal', 'box')

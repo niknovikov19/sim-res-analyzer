@@ -32,7 +32,7 @@ fname_metadata = 'metadata.json'
 rate_par = RateParams(dt=0.002)
 
 psd_par = PSDParams(
-    inp_limits=(0.5, None), win_len=1.5, win_overlap=0.75, fmax=150)
+    inp_limits=(1.5, 8), win_len=1.5, win_overlap=0.75, fmax=150)
 
 
 # Folders for the data and figures
@@ -71,7 +71,7 @@ for n, desc in enumerate(pop_yrange_descs):
     x[n]['orig'] = X.sel(pop=desc['pop'], y=slice(*desc['yrange'])).mean(dim='y')
 
 n1 = 0
-n2 = 5
+n2 = 7
         
 # Coherence and CPSD
 x1 = x[n1]['orig']

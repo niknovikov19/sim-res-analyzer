@@ -16,6 +16,7 @@ from sim_res_parser import SimResultParser, RateParams
 from data_keeper import DataKeeper
 from data_proc import DataProcessor, PSDParams
 from plot_utils import plot_xarray_2d, polar_to_rgb, hsv_colorbar
+from plot_utils import plot_circle_matrix
 
 
 dirpath_storage_root = Path(r'D:\WORK\Salvador\repo\sim_res_analyzer\data')
@@ -63,8 +64,8 @@ pop_yrange_descs = [
 nperseg = 1024
 fmax = 150
 
-#fband = (4, 10)
-fband = (50, 100)
+#fband = (4, 14)
+fband = (80, 100)
 
 # =============================================================================
 # title_str = (f'{data_type}  '
@@ -95,14 +96,30 @@ for n1, desc1 in enumerate(pop_yrange_descs):
         
 title_str = f'{data_type}, {fband[0]}-{fband[1]} Hz'
 
-Crgb = polar_to_rgb(C, s_mult=1.5)
+# =============================================================================
+# Crgb = polar_to_rgb(C, s_mult=1.5)
+# plt.figure()
+# plt.imshow(Crgb, aspect='equal', origin='lower')
+# labels = [f'{desc["pop"]} {desc["yrange"][0]}-{desc["yrange"][1]}'
+#           for desc in pop_yrange_descs]
+# plt.xticks(ticks=np.arange(nsig), labels=labels, rotation=45, ha='right')
+# plt.yticks(ticks=np.arange(nsig), labels=labels, rotation=0)
+# hsv_colorbar()
+# plt.title(title_str)
+# =============================================================================
+
+import cmocean
+import cmasher
+
 plt.figure()
-plt.imshow(Crgb, aspect='equal', origin='lower')
-labels = [f'{desc["pop"]} {desc["yrange"][0]}-{desc["yrange"][1]}'
-          for desc in pop_yrange_descs]
-plt.xticks(ticks=np.arange(nsig), labels=labels, rotation=45, ha='right')
-plt.yticks(ticks=np.arange(nsig), labels=labels, rotation=0)
-hsv_colorbar()
+plot_circle_matrix(np.angle(C), np.abs(C), clim=(-pi, pi),
+                   #cmap=cmocean.cm.phase
+                   cmap=cmasher.infinity
+                   #cmap='hsv'
+                   )
+plt.gca().set_aspect('equal', 'box')
 plt.title(title_str)
+plt.xticks([])
+plt.yticks([])
 
 X.close()
