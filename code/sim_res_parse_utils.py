@@ -90,9 +90,9 @@ def get_pop_spikes(sim_result, pop_name, combine_cells=True,
 
 def get_pop_cell_rates(sim_result, pop_name, t0=0, tmax=None):
     S = get_pop_spikes(sim_result, pop_name, combine_cells=False)
-    T = get_sim_duration(sim_result)
     if tmax is None:
-        tmax = T
+        tmax = get_sim_duration(sim_result)
+    T = tmax - t0
     r = np.array([len(s[(s >= t0) & (s <= tmax)]) / T for s in S])
     return r
 
